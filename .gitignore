@@ -1,0 +1,7 @@
+generated
+target
+.manager
+.idea
+*.iml
+*~
+
