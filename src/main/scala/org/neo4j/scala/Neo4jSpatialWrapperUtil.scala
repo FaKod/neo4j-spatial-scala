@@ -20,7 +20,9 @@ import org.neo4j.graphdb.{PropertyContainer, Node, GraphDatabaseService}
 trait Neo4jSpatialWrapperUtil {
 
   /**
+   * *****
    * Search convenience defs
+   * *****
    */
 
   def withSearchWithinDistance[T](point: Point, distance: Double)(operation: (SearchWithinDistance) => T): T = {
@@ -37,24 +39,31 @@ trait Neo4jSpatialWrapperUtil {
 
   /**
    * handles the searches with one Geometry parameter
+   * f.e. SearchWithin
    */
-  def search[T <: AbstractSearch](geometry: Geometry)(implicit layer: EditableLayer, m: ClassManifest[T]) = {
+  def search[T <: AbstractSearch](geometry: Geometry)(implicit layer: EditableLayer, m: ClassManifest[T]): Buffer[SpatialDatabaseRecord] = {
     val ctor = m.erasure.getConstructor(classOf[Geometry])
     val search = ctor.newInstance(geometry).asInstanceOf[T]
     layer.getIndex.executeSearch(search)
-    val result: Buffer[SpatialDatabaseRecord] = search.getResults
-    result
+    search.getResults
   }
 
+  /**
+   * more functional convenience method to handle searches with one
+   * Geometry parameter f.e. SearchWithin
+   */
   def withSearch[T <: AbstractSearch](geometry: Geometry)(operation: (AbstractSearch) => Unit)(implicit m: ClassManifest[T]): Unit = {
     val ctor = m.erasure.getConstructor(classOf[Geometry])
     val search = ctor.newInstance(geometry).asInstanceOf[T]
     operation(search)
   }
 
-  def executeSearch(implicit search: Search, layer: EditableLayer) = layer.getIndex.executeSearch(search)
+  def executeSearch(implicit search: Search, layer: EditableLayer):Unit = layer.getIndex.executeSearch(search)
 
-  def getResults(implicit search: Search) = search.getResults
+  /**
+   * returns the result set of the spatial search as Scala Buffer
+   */
+  def getResults(implicit search: Search): Buffer[SpatialDatabaseRecord] = search.getResults
 
   /**
    * node convenience defs
@@ -82,6 +91,9 @@ trait Neo4jSpatialWrapperUtil {
 
   // delegation to Neo4jWrapper
   implicit def node2relationshipBuilder(sdr: SpatialDatabaseRecord) = new NodeRelationshipMethods(sdr.getGeomNode)
+
+  // allows <code> val munich = add newPoint ((15.3, 56.2)) using City() </code>
+  implicit def node2Serialization(sdr: SpatialDatabaseRecord) = new SpatialDatabaseRecordSerializator(sdr)
 
   implicit def nodeToSpatialDatabaseRecord(node: Node)(implicit layer: Layer): SpatialDatabaseRecord =
     new SpatialDatabaseRecord(layer, node)

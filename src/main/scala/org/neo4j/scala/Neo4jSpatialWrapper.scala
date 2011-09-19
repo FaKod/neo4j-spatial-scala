@@ -1,6 +1,6 @@
 package org.neo4j.scala
 
-import org.neo4j.gis.spatial.{EditableLayer, SpatialDatabaseService}
+import org.neo4j.gis.spatial.{SpatialDatabaseRecord, EditableLayer, SpatialDatabaseService}
 
 /**
  * Basic Neo4j Spatial Wrapper trait
@@ -35,6 +35,11 @@ trait Neo4jSpatialWrapper extends Neo4jWrapper with SpatialDatabaseServiceProvid
     val layer = getLayer
     operation(layer)
   }
+}
+
+class SpatialDatabaseRecordSerializator(sdr: SpatialDatabaseRecord) {
+
+  def using[T <: Product](cc: T) = Neo4jWrapper.serialize(cc, sdr.getGeomNode)
 }
 
 

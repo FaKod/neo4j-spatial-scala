@@ -70,6 +70,9 @@ object LinRing {
 
   def apply(b: Buffer[(Double, Double)])(implicit layer: EditableLayer) =
     new LinearRing(CoordArraySequence(b), layer.getGeometryFactory)
+
+  def apply(l: List[(Double, Double)])(implicit layer: EditableLayer) =
+    new LinearRing(CoordArraySequence(l toBuffer), layer.getGeometryFactory)
 }
 
 /**

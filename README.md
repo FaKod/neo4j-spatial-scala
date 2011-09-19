@@ -1,59 +1,80 @@
 Neo4j Spatial Scala wrapper library
 =======================
 
-I tried to add some wrapper stuff for the Neo4j Spatial implementation. 
-So you are able to create a city Munich as follows:
+Building
+--------
 
-    val munich = add newPoint ((15.3, 56.2))
-    munich.setProperty("City", "Munich")
+    $ git clone git://github.com/fakod/neo4j-scala.git
+    $ cd neo4j-scala
+    $ mvn clean install
 
-and attached it to a federal state like Bavaria:
+This library needs [Neo4j-Scala](http://github.com/FaKod/neo4j-scala) that you have to "mvn install" first.
 
-    val bayernBuffer = Buffer[(Double, Double)]((15, 56), (16, 56), (15, 57), (16, 57), (15, 56))
-    val bayern = add newPolygon (LinRing(bayernBuffer))
-    bayern.setProperty("FederalState", "Bayern")
-    federalStates --> "isFederalState" --> bayern
+Using this library
+==================
 
-Additionally I added some examples like those pattern shown in the [Neo4j Design Guide](http://wiki.neo4j.org/content/Design_Guide):
+Spatial Database Service Provider
+------------------------------
+Neo4j Spatial Scala Wrapper needs a Spatial Database Service Provider, it has to implement SpatialDatabaseServiceProvider trait.
+One possibility is to use the SimpleSpatialDatabaseServiceProvider for embedded Neo4j instances where you simply have to define a Neo4j storage directory. A class using the wrapper is f.e.:
 
-    . . .
-	class FedaralState(val node: SpatialDatabaseRecord) extends . . . {
+    class MyNeo4jClass extends SomethingClass with Neo4jSpatialWrapper with EmbeddedGraphDatabaseServiceProvider with SimpleSpatialDatabaseServiceProvider {
+      def neo4jStoreDir = "/tmp/temp-spatial-neo"
+      . . .
+    }
 
-	  object FedaralState {
-	    val KEY_FEDSTATE_NAME = "federalState"
-	  }
 
-	  def name = node.getProperty(FedaralState.KEY_FEDSTATE_NAME)
+Transaction Wrapping
+--------------------
+Transactions are wrapped by withSpatialTx. After leaving the "scope" success is called (or rollback if an exception is raised):
 
-	  def name_=(n: String) {
-	    node.setProperty(FedaralState.KEY_FEDSTATE_NAME, n)
-	  }
+    withSpatialTx {
+     implicit neo =>
+       deleteLayer("test", new NullListener)
+       val layerNames = getLayerNames
+    }
 
-	  def getCapitalCity(implicit layer: EditableLayer) = {
-	    val o = node.getSingleRelationship("CapitalCityOf", Direction.INCOMING).getOtherNode(node)
-	    new City(new SpatialDatabaseRecord(layer, o))
-	  }
+
+Using Layer
+-----------
+To ease the Layer handling a Layer scope can be provided:
+
+	// return or create a Layer instance
+    withLayer(getOrCreateEditableLayer("test")) {
+	    implicit layer =>
+	    // adding a new Point to Layer "test"
+	    val point = add newPoint ((15.3, 56.2))
 	}
-	. . .
-	
-that finaly result in code as follows:
 
-     /**
-      * create Munich and "attach" it to the cities node
-      */
-     val munich = NewSpatialNode[City]((15.3, 56.2))
-     munich.name = "Munich"
-     cities --> "isCity" --> munich
 
-     /**
-      * create a polygon called Bayern, "attach" it to the federal state node and
-      * "attach" the capital city Munich
-      */
-     val bayernBuffer = Buffer[(Double, Double)]((15, 56), (16, 56), (15, 57), (16, 57), (15, 56))
-     val bayern = NewSpatialNode[FedaralState](bayernBuffer)
-     bayern.name = "Bayern"
-     federalStates --> "isFederalState" --> bayern
-     munich --> "CapitalCityOf" --> bayern
+Adding Spatial Features to a Layer
+---------------------------------
+Tuples are used for locations, List of Tuples for geometries with more than one location. 
+Case class serialization can by added by "using ..."
+
+    case class City(name: String) 
+    case class FederalState(name: String)
+    . . .
+    val point = add newPoint ((15.3, 56.2))
+    val munich = add newPoint ((15.3, 56.2)) using City("Munich")
+
+    val ring = LinRing((15.0, 56.0) ::(16.0, 56.0) ::(15.0, 57.0) ::(16.0, 57.0) ::(15.0, 56.0) :: Nil)
+	val bayern = add newPolygon (ring) using FederalState("Bayern")
 	
-Lookes rather nice IMHO, but is still very incomplete...
+	munich --> "CapitalCityOf" --> bayern
+	
+	
+Searching Things
+----------------
+For spatial searches defined by one geometry parameter search[SearchType] can be used:
+
+    val result = search[SearchWithin](toGeometry(new Envelope(15.0, 16.0, 56.0, 57.0)))
+
+    withSearch[SearchWithin](bayern.getGeometry) {
+	  implicit s =>
+	    executeSearch
+	    // sum up all results that have a property "name"
+	    val cities = for(r <- getResults; p <- r[String]("name")) yield Neo4jWrapper.deSerialize[City](r)
+	}
+
 
