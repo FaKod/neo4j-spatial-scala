@@ -73,8 +73,8 @@ For spatial searches defined by one geometry parameter search[SearchType] can be
     withSearch[SearchWithin](bayern.getGeometry) {
 	  implicit s =>
 	    executeSearch
-	    // sum up all results that have a property "name"
-	    val cities = for(r <- getResults; p <- r[String]("name")) yield Neo4jWrapper.deSerialize[City](r)
+	    // yield all Nodes that are of Case Class City
+	    val cities = for(n <- getResults; c <- n.toCC[City]) yield c
 	}
 
 

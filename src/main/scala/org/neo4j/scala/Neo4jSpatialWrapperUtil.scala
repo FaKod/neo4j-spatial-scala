@@ -99,6 +99,13 @@ trait Neo4jSpatialWrapperUtil {
     new SpatialDatabaseRecord(layer, node)
 
   /**
+   * delegates to Neo4jWrapper.toCC[T]
+   */
+   implicit def nodeToCaseClass(sdr: SpatialDatabaseRecord) = new {
+    def toCC[T <: Product](implicit m: ClassManifest[T]) = Neo4jWrapper.toCC[T](sdr.getGeomNode)
+  }
+
+  /**
    * DatabaseService Wrapper
    */
 

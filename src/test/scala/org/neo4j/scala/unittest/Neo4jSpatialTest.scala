@@ -81,10 +81,10 @@ class Neo4jSpatialSpec extends SpecificationWithJUnit with Neo4jSpatialWrapper w
             implicit s =>
               executeSearch
             getResults.size must beEqualTo(2)
-            for (r <- getResults; p <- r[String]("name")) {
-              p must beEqualTo("Munich")
+            for (r <- getResults; c <- r.toCC[City]) {
               var oo = Neo4jWrapper.deSerialize[City](r)
-              println(oo)
+              oo must beEqualTo(c)
+              println("oo: " + oo + " c: " + c)
             }
 
 
