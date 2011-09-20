@@ -4,7 +4,7 @@ Neo4j Spatial Scala wrapper library
 Building
 --------
 
-    $ git clone git://github.com/fakod/neo4j-scala.git
+    $ git clone git://github.com/FaKod/neo4j-scala.git
     $ cd neo4j-scala
     $ mvn clean install
 
@@ -73,7 +73,7 @@ For spatial searches defined by one geometry parameter search[SearchType] can be
     withSearch[SearchWithin](bayern.getGeometry) {
 	  implicit s =>
 	    executeSearch
-	    // yield all Nodes that are of Case Class City
+	    // yield all Nodes that are of type Case Class City
 	    val cities = for(n <- getResults; c <- n.toCC[City]) yield c
 	}
 
