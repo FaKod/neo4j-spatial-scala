@@ -13,9 +13,9 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <scala.version>2.9.1</scala.version>
-        <neo4j.version>1.4.1</neo4j.version>
+        <neo4j.version>1.5-SNAPSHOT</neo4j.version>
         <neo4j-scala.version>0.1.0-SNAPSHOT</neo4j-scala.version>
-        <neo4j.shell.version>1.4.1</neo4j.shell.version>
+        <neo4j.shell.version>1.5-SNAPSHOT</neo4j.shell.version>
         <neo4j.spatial.version>0.6</neo4j.spatial.version>
         <geotools.version>2.7-RC1</geotools.version>
     </properties>
