@@ -39,7 +39,10 @@ trait Neo4jSpatialWrapper extends Neo4jWrapper with SpatialDatabaseServiceProvid
 
 class SpatialDatabaseRecordSerializator(sdr: SpatialDatabaseRecord) {
 
-  def using[T <: Product](cc: T) = Neo4jWrapper.serialize(cc, sdr.getGeomNode)
+  def using(cc: AnyRef): SpatialDatabaseRecord = {
+    Neo4jWrapper.serialize(cc, sdr.getGeomNode)
+    sdr
+  }
 }
 
 

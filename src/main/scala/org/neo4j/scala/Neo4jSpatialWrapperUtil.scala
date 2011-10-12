@@ -58,7 +58,7 @@ trait Neo4jSpatialWrapperUtil {
     operation(search)
   }
 
-  def executeSearch(implicit search: Search, layer: EditableLayer):Unit = layer.getIndex.executeSearch(search)
+  def executeSearch(implicit search: Search, layer: EditableLayer): Unit = layer.getIndex.executeSearch(search)
 
   /**
    * returns the result set of the spatial search as Scala Buffer
@@ -101,8 +101,8 @@ trait Neo4jSpatialWrapperUtil {
   /**
    * delegates to Neo4jWrapper.toCC[T]
    */
-   implicit def nodeToCaseClass(sdr: SpatialDatabaseRecord) = new {
-    def toCC[T <: Product](implicit m: ClassManifest[T]) = Neo4jWrapper.toCC[T](sdr.getGeomNode)
+  implicit def nodeToCaseClass(sdr: SpatialDatabaseRecord) = new {
+    def toCC[T: Manifest] = Neo4jWrapper.toCC[T](sdr.getGeomNode)
   }
 
   /**
