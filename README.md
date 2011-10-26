@@ -4,8 +4,8 @@ Neo4j Spatial Scala wrapper library
 Building
 --------
 
-    $ git clone git://github.com/FaKod/neo4j-scala.git
-    $ cd neo4j-scala
+    $ git clone git://github.com/FaKod/neo4j-spatial-scala.git
+    $ cd neo4j-spatial-scala
     $ mvn clean install
 
 This library needs [Neo4j-Scala](http://github.com/FaKod/neo4j-scala) that you have to "mvn install" first.
