@@ -10,6 +10,23 @@ Building
 
 This library needs [Neo4j-Scala](http://github.com/FaKod/neo4j-scala) that you have to "mvn install" first.
 
+Or try to maven fetch it with a Github Maven Repo:
+
+    <repositories>
+      <repository>
+        <id>fakod-snapshots</id>
+        <url>https://raw.github.com/FaKod/fakod-mvn-repo/master/snapshots</url>
+      </repository>
+    </repositories>
+
+    <dependencies>
+      <dependency>
+        <groupId>org.neo4j</groupId>
+        <artifactId>neo4j-spatial-scala</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+      </dependency>
+    </dependencies>
+
 Using this library
 ==================
 
