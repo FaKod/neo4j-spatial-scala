@@ -4,6 +4,7 @@ import org.neo4j.gis.spatial._
 import collection.mutable.Buffer
 import com.vividsolutions.jts.geom.impl.CoordinateArraySequence
 import com.vividsolutions.jts.geom._
+import org.neo4j.graphdb.Node
 
 /**
  * Really simple and very incomplete list of spatial utility classes
@@ -38,6 +39,35 @@ private[scala] class AddGeometry(layer: EditableLayer) {
   def newLineString(coordinates: CoordinateArraySequence) = layer.add(gf.createLineString(coordinates))
 
   def newMultiLineString(lineStrings: Array[LineString]) = layer.add(gf.createMultiLineString(lineStrings))
+}
+
+private[scala] class UpdateGeometry(node: Node,  layer: EditableLayer) {
+  private val gf = layer.getGeometryFactory
+
+  /**
+   * Points
+   */
+  def withPoint(coordinate: Coordinate): Unit = layer.update(node.getId, gf.createPoint(coordinate))
+
+  def withMultiPoint(points: Array[Point]): Unit = layer.update(node.getId, gf.createMultiPoint(points))
+
+  def withMultiPoint(coordinates: CoordinateArraySequence): Unit = layer.update(node.getId, gf.createMultiPoint(coordinates))
+
+  /**
+   * Polygon
+   */
+  def withPolygon(shell: LinearRing, holes: Array[LinearRing] = null): Unit = layer.update(node.getId, gf.createPolygon(shell, holes))
+
+  def withMultiPolygon(polygons: Array[Polygon]): Unit = layer.update(node.getId, gf.createMultiPolygon(polygons))
+
+  /**
+   * Line String
+   */
+  def withLineString(coordinates: Array[Coordinate]): Unit = layer.update(node.getId, gf.createLineString(coordinates))
+
+  def withLineString(coordinates: CoordinateArraySequence): Unit = layer.update(node.getId, gf.createLineString(coordinates))
+
+  def withMultiLineString(lineStrings: Array[LineString]): Unit = layer.update(node.getId, gf.createMultiLineString(lineStrings))
 }
 
 
