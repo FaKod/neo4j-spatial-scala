@@ -6,7 +6,7 @@
     <artifactId>neo4j-spatial-scala</artifactId>
     <packaging>jar</packaging>
     <name>Neo4j Spatial Scala</name>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
     <description>Scala Spatial wrapper for Neo4j Graph Database and its Spatial Extension</description>
     <inceptionYear>2011</inceptionYear>
 
