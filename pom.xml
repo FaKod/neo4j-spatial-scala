@@ -45,11 +45,6 @@
 
     <repositories>
         <repository>
-            <id>scala-tools.org</id>
-            <name>Scala-Tools Maven2 Repository</name>
-            <url>http://scala-tools.org/repo-releases</url>
-        </repository>
-        <repository>
             <id>neo4j-public-repository</id>
             <url>http://m2.neo4j.org/content/groups/public/</url>
         </repository>
