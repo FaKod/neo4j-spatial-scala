@@ -6,8 +6,8 @@ import collection.mutable.Buffer
 import com.vividsolutions.jts.geom._
 import collection.JavaConversions._
 import query.{SearchWithinDistance, SearchWithin}
-import util.{AddGeometry, Coord}
 import org.neo4j.graphdb.{PropertyContainer, Node, GraphDatabaseService}
+import util.{UpdateGeometry, AddGeometry, Coord}
 
 /**
  * Util and implicit Trait for spatial stuff
@@ -141,6 +141,8 @@ trait Neo4jSpatialWrapperUtil {
   //def executeSearch(search: Search)(implicit layer: EditableLayer): Unit = layer.getIndex.executeSearch(search)
 
   def add(implicit layer: EditableLayer) = new AddGeometry(layer)
+
+  def update(node : Node)(implicit layer: EditableLayer) = new UpdateGeometry(node, layer)
 
 }
 

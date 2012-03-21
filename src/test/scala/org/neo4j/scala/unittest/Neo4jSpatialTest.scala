@@ -4,11 +4,11 @@ import org.neo4j.gis.spatial.query.SearchWithin
 import collection.mutable.Buffer
 import org.neo4j.gis.spatial.NullListener
 import com.vividsolutions.jts.geom.Envelope
-import org.neo4j.graphdb.Direction
 import org.specs2.mutable.SpecificationWithJUnit
 import org.neo4j.scala.util.LinRing
 import java.util.Date
 import org.neo4j.scala.{Neo4jWrapper, SimpleSpatialDatabaseServiceProvider, EmbeddedGraphDatabaseServiceProvider, Neo4jSpatialWrapper}
+import org.neo4j.graphdb.{Node, Direction}
 
 case class Cities(creationDate: String = new Date().toString)
 
@@ -40,6 +40,40 @@ class Neo4jSpatialSpec extends SpecificationWithJUnit with Neo4jSpatialWrapper w
         start --> "foo" --> end
         start.getSingleRelationship("foo", Direction.OUTGOING).getOtherNode(start) must beEqualTo(end)
       }
+    }
+
+    "allow updates" in {
+      withSpatialTx {
+        implicit db =>
+
+        // remove existing layer
+          try {
+            deleteLayer("test", new NullListener)
+          }
+          catch {
+            case _ =>
+          }
+
+          withLayer(getOrCreateEditableLayer("test")) {
+            implicit layer =>
+              val newNode: Node = add newPoint ((0.0, 0.0)) using City("München")
+
+              withSearch[SearchWithin](toGeometry(new Envelope(15.0, 16.0, 56.0, 57.0))) {
+                implicit s =>
+                  executeSearch
+                  getResults.size must beEqualTo(0)
+              }
+              
+              update(newNode) withPoint ((15.3, 56.2))
+
+              withSearch[SearchWithin](toGeometry(new Envelope(15.0, 16.0, 56.0, 57.0))) {
+                implicit s =>
+                  executeSearch
+                  getResults.size must beEqualTo(1)
+              }
+          }
+      }
+      success
     }
 
     "simplify layer, node and search usage" in {
