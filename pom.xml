@@ -6,18 +6,19 @@
     <artifactId>neo4j-spatial-scala</artifactId>
     <packaging>jar</packaging>
     <name>Neo4j Spatial Scala</name>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.2.0-SNAPSHOT</version>
     <description>Scala Spatial wrapper for Neo4j Graph Database and its Spatial Extension</description>
     <inceptionYear>2011</inceptionYear>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <scala.version>2.9.1</scala.version>
-        <neo4j.version>1.5</neo4j.version>
-        <neo4j-scala.version>0.1.0</neo4j-scala.version>
-        <neo4j.shell.version>1.5</neo4j.shell.version>
-        <neo4j.spatial.version>0.6</neo4j.spatial.version>
-        <geotools.version>2.7-RC1</geotools.version>
+        <!--neo4j.version>1.6</neo4j.version-->
+        <neo4j-scala.version>0.2.0-M1</neo4j-scala.version>
+        <!--neo4j.shell.version>1.6</neo4j.shell.version-->
+        <neo4j.spatial.version>0.8</neo4j.spatial.version>
+        <!--geotools.version>8.0-M4</geotools.version-->
+        <gremlin.version>1.4</gremlin.version>
     </properties>
 
     <developers>
@@ -45,13 +46,8 @@
 
     <repositories>
         <repository>
-            <id>scala-tools.org</id>
-            <name>Scala-Tools Maven2 Repository</name>
-            <url>http://scala-tools.org/repo-releases</url>
-        </repository>
-        <repository>
             <id>neo4j-public-repository</id>
-            <url>http://m2.neo4j.org</url>
+            <url>http://m2.neo4j.org/content/groups/public/</url>
         </repository>
         <repository>
             <id>osgeo</id>
@@ -69,6 +65,54 @@
     </repositories>
 
     <dependencies>
+        <dependency>
+            <groupId>com.tinkerpop.gremlin</groupId>
+            <artifactId>gremlin-groovy</artifactId>
+            <version>${gremlin.version}</version>
+            <type>jar</type>
+            <!--scope>provided</scope-->
+            <exclusions>
+                <!-- Sail support not needed -->
+                <exclusion>
+                    <groupId>com.tinkerpop.blueprints</groupId>
+                    <artifactId>blueprints-sail-graph</artifactId>
+                </exclusion>
+                <!-- Maven support in groovy not needed -->
+                <exclusion>
+                    <groupId>org.codehaus.groovy.maven</groupId>
+                    <artifactId>gmaven-plugin</artifactId>
+                </exclusion>
+                <!-- "readline" not needed - we only expose gremlin through webadmin -->
+                <exclusion>
+                    <groupId>jline</groupId>
+                    <artifactId>jline</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.tinkerpop.gremlin</groupId>
+            <artifactId>gremlin-java</artifactId>
+            <version>${gremlin.version}</version>
+            <type>jar</type>
+            <!--scope>provided</scope-->
+            <exclusions>
+                <!-- Sail support not needed -->
+                <exclusion>
+                    <groupId>com.tinkerpop.blueprints</groupId>
+                    <artifactId>blueprints-sail-graph</artifactId>
+                </exclusion>
+                <!-- Maven support in groovy not needed -->
+                <exclusion>
+                    <groupId>org.codehaus.groovy.maven</groupId>
+                    <artifactId>gmaven-plugin</artifactId>
+                </exclusion>
+                <!-- "readline" not needed - we only expose gremlin through webadmin -->
+                <exclusion>
+                    <groupId>jline</groupId>
+                    <artifactId>jline</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-scala</artifactId>
@@ -102,7 +146,7 @@
         </dependency>
 
         <!-- Neo4j graph database -->
-        <dependency>
+        <!--dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-kernel</artifactId>
             <version>${neo4j.version}</version>
@@ -111,57 +155,50 @@
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-lucene-index</artifactId>
             <version>${neo4j.version}</version>
-        </dependency>
+        </dependency-->
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-spatial</artifactId>
             <version>${neo4j.spatial.version}</version>
         </dependency>
-        <dependency>
+        <!--dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-shell</artifactId>
             <version>${neo4j.shell.version}</version>
-        </dependency>
+        </dependency-->
 
         <!-- GEO Tools Stuff -->
-        <dependency>
+        <!--dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-main</artifactId>
-            <version>${geotools.version}</version>
-            <!--scope>provided</scope-->
-            <exclusions>
+            <version>${geotools.version}</version-->
+        <!--scope>provided</scope-->
+        <!--exclusions-->
 
-                <!--exclusion>
-              <groupId>com.vividsolutions</groupId>
-              <artifactId>jts</artifactId>
-              </exclusion-->
-            </exclusions>
-        </dependency>
-        <dependency>
+        <!--exclusion>
+        <groupId>com.vividsolutions</groupId>
+        <artifactId>jts</artifactId>
+        </exclusion-->
+        <!--/exclusions>
+        </dependency-->
+        <!--dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-shapefile</artifactId>
             <version>${geotools.version}</version>
-            <!--scope>provided</scope-->
             <exclusions>
             </exclusions>
-        </dependency>
-        <dependency>
+        </dependency-->
+        <!--dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-render</artifactId>
             <version>${geotools.version}</version>
-            <!--scope>provided</scope-->
             <exclusions>
-
-                <!--exclusion>
-              <groupId>org.geotools</groupId>
-              <artifactId>gt-coverage</artifactId>
-              </exclusion-->
                 <exclusion>
                     <groupId>it.geosolutions.imageio-ext</groupId>
                     <artifactId>imageio-ext-tiff</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
+        </dependency-->
     </dependencies>
 
     <build>
