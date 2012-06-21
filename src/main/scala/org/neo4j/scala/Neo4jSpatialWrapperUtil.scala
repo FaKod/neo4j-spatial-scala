@@ -5,9 +5,10 @@ import org.neo4j.gis.spatial._
 import collection.mutable.Buffer
 import com.vividsolutions.jts.geom._
 import collection.JavaConversions._
-import query.{SearchWithinDistance, SearchWithin}
+import pipes.GeoPipeline
 import org.neo4j.graphdb.{PropertyContainer, Node, GraphDatabaseService}
 import util.{UpdateGeometry, AddGeometry, Coord}
+import org.neo4j.collections.rtree.Listener
 
 /**
  * Util and implicit Trait for spatial stuff
@@ -19,55 +20,23 @@ import util.{UpdateGeometry, AddGeometry, Coord}
  */
 trait Neo4jSpatialWrapperUtil {
 
-  /**
-   * *****
-   * Search convenience defs
-   * *****
-   */
 
-  def withSearchWithinDistance[T](point: Point, distance: Double)(operation: (SearchWithinDistance) => T): T = {
-    val search = new SearchWithinDistance(point, distance)
-    operation(search)
+  /**
+   *
+   * @param search
+   * @param layer
+   * @tparam A :< Search
+   * @return
+   */
+  def search[A <: Search](search: A)(implicit layer: EditableLayer): Either[Throwable, GeoPipeline] = {
+    search match {
+      case s: Within => Right(GeoPipeline.startWithinSearch(layer, s.geometry))
+      case s: WithinDistance => Right(GeoPipeline.startNearestNeighborSearch(layer, s.geometry.getCoordinate, s.distance))
+      case s: CoveredBy => Right(GeoPipeline.startCoveredBySearch(layer, s.geometry))
+      case s: Intersect => Right(GeoPipeline.startIntersectSearch(layer, s.geometry))
+      case _ => Left(throw new IllegalArgumentException("unsupported search type"))
+    }
   }
-
-  def searchWithinDistance(point: Point, distance: Double)(implicit layer: EditableLayer) = {
-    val search = new SearchWithinDistance(point, distance)
-    layer.getIndex.executeSearch(search)
-    val result: Buffer[SpatialDatabaseRecord] = search.getResults
-    result
-  }
-
-  /**
-   * handles the searches with one Geometry parameter
-   * f.e. SearchWithin
-   */
-  def search[T <: AbstractSearch](geometry: Geometry)(implicit layer: EditableLayer, m: ClassManifest[T]): Buffer[SpatialDatabaseRecord] = {
-    val ctor = m.erasure.getConstructor(classOf[Geometry])
-    val search = ctor.newInstance(geometry).asInstanceOf[T]
-    layer.getIndex.executeSearch(search)
-    search.getResults
-  }
-
-  /**
-   * more functional convenience method to handle searches with one
-   * Geometry parameter f.e. SearchWithin
-   */
-  def withSearch[T <: AbstractSearch](geometry: Geometry)(operation: (AbstractSearch) => Unit)(implicit m: ClassManifest[T]): Unit = {
-    val ctor = m.erasure.getConstructor(classOf[Geometry])
-    val search = ctor.newInstance(geometry).asInstanceOf[T]
-    operation(search)
-  }
-
-  def executeSearch(implicit search: Search, layer: EditableLayer): Unit = layer.getIndex.executeSearch(search)
-
-  /**
-   * returns the result set of the spatial search as Scala Buffer
-   */
-  def getResults(implicit search: Search): Buffer[SpatialDatabaseRecord] = search.getResults
-
-  /**
-   * node convenience defs
-   */
 
   implicit def IsSpatialDatabaseRecordToNode(r: IsSpatialDatabaseRecord): Node = r.node.getGeomNode
 
@@ -138,8 +107,6 @@ trait Neo4jSpatialWrapperUtil {
 
   def toGeometry(envelope: Envelope)(implicit layer: EditableLayer): Geometry = getGeometryFactory.toGeometry(envelope)
 
-  //def executeSearch(search: Search)(implicit layer: EditableLayer): Unit = layer.getIndex.executeSearch(search)
-
   def add(implicit layer: EditableLayer) = new AddGeometry(layer)
 
   def update(node : Node)(implicit layer: EditableLayer) = new UpdateGeometry(node, layer)
@@ -151,4 +118,35 @@ trait Neo4jSpatialWrapperUtil {
  */
 trait IsSpatialDatabaseRecord {
   val node: SpatialDatabaseRecord
+}
+
+
+/**
+ * Abstract class for the different search classes
+ */
+abstract trait Search {
+  val geometry: Geometry
+}
+
+/*
+ * case classes for the different searchtypes
+ */
+case class Within(geometry: Geometry) extends Search
+case class WithinDistance(geometry: Geometry, distance: Double) extends Search
+case class CoveredBy(geometry: Geometry) extends Search
+case class Intersect(geometry: Geometry) extends Search
+
+object GeoPiplineImplicits {
+  implicit def geoPipelineToBuffer(pipeline: GeoPipeline) = new {
+    def toSDRBuffer: Buffer[SpatialDatabaseRecord] = {
+      pipeline.toSpatialDatabaseRecordList.toBuffer
+    }
+  }
+
+  implicit def geoPipelineToList(pipeline: GeoPipeline) = new {
+    def toSDRList: List[SpatialDatabaseRecord] = {
+      import collection.JavaConversions._
+      pipeline.toSpatialDatabaseRecordList.toList
+    }
+  }
 }

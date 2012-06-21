@@ -1,14 +1,14 @@
 package org.neo4j.scala.unittest
 
-import org.neo4j.gis.spatial.query.SearchWithin
-import collection.mutable.Buffer
-import org.neo4j.gis.spatial.NullListener
+
 import com.vividsolutions.jts.geom.Envelope
 import org.specs2.mutable.SpecificationWithJUnit
 import org.neo4j.scala.util.LinRing
 import java.util.Date
-import org.neo4j.scala.{Neo4jWrapper, SimpleSpatialDatabaseServiceProvider, EmbeddedGraphDatabaseServiceProvider, Neo4jSpatialWrapper}
+import org.neo4j.scala._
 import org.neo4j.graphdb.{Node, Direction}
+import org.neo4j.collections.rtree.NullListener
+
 
 case class Cities(creationDate: String = new Date().toString)
 
@@ -21,6 +21,8 @@ case class FederalState(name: String, creationDate: String = new Date().toString
 class Neo4jSpatialSpec extends SpecificationWithJUnit with Neo4jSpatialWrapper with EmbeddedGraphDatabaseServiceProvider with SimpleSpatialDatabaseServiceProvider {
 
   def neo4jStoreDir = "/tmp/temp-neo-spatial-test"
+
+  import GeoPiplineImplicits._
 
   "NeoSpatialWrapper" should {
 
@@ -35,10 +37,10 @@ class Neo4jSpatialSpec extends SpecificationWithJUnit with Neo4jSpatialWrapper w
       withTx {
         implicit db =>
 
-        val start = createNode
-        val end = createNode
-        start --> "foo" --> end
-        start.getSingleRelationship("foo", Direction.OUTGOING).getOtherNode(start) must beEqualTo(end)
+          val start = createNode
+          val end = createNode
+          start --> "foo" --> end
+          start.getSingleRelationship("foo", Direction.OUTGOING).getOtherNode(start) must beEqualTo(end)
       }
     }
 
@@ -58,18 +60,14 @@ class Neo4jSpatialSpec extends SpecificationWithJUnit with Neo4jSpatialWrapper w
             implicit layer =>
               val newNode: Node = add newPoint ((0.0, 0.0)) using City("München")
 
-              withSearch[SearchWithin](toGeometry(new Envelope(15.0, 16.0, 56.0, 57.0))) {
-                implicit s =>
-                  executeSearch
-                  getResults.size must beEqualTo(0)
+              search(Within(toGeometry(new Envelope(15.0, 16.0, 56.0, 57.0)))) match {
+                case Right(x) => x.toSDRList.size must beEqualTo (0)
               }
-              
+
               update(newNode) withPoint ((15.3, 56.2))
 
-              withSearch[SearchWithin](toGeometry(new Envelope(15.0, 16.0, 56.0, 57.0))) {
-                implicit s =>
-                  executeSearch
-                  getResults.size must beEqualTo(1)
+              search(Within(toGeometry(new Envelope(15.0, 16.0, 56.0, 57.0)))) match {
+                case Right(x) => x.toSDRList.size must beEqualTo(1)
               }
           }
       }
@@ -89,50 +87,44 @@ class Neo4jSpatialSpec extends SpecificationWithJUnit with Neo4jSpatialWrapper w
             case _ =>
           }
 
-        val cities = createNode(Cities())
-        val federalStates = createNode(FederalStates())
+          val cities = createNode(Cities())
+          val federalStates = createNode(FederalStates())
 
-        withLayer(getOrCreateEditableLayer("test")) {
-          implicit layer =>
+          withLayer(getOrCreateEditableLayer("test")) {
+            implicit layer =>
 
-          // adding Point without serialized Case Class
-          val munichTMP = add newPoint ((15.3, 56.2))
+            // adding Point without serialized Case Class
+              val munichTMP = add newPoint ((15.3, 56.2))
 
-          // adding Point and Case Class
-          val munich = add newPoint ((15.3, 56.2)) using City("Munich")
-          munich("Additional Property") = "something"
-
-
-          // adding new Polygon
-          val lineRing = LinRing((15.0, 56.0) ::(16.0, 56.0) ::(15.0, 57.0) ::(16.0, 57.0) ::(15.0, 56.0) :: Nil)
-          val bayern = add newPolygon (lineRing) using FederalState("Bayern")
-
-          cities --> "isCity" --> munich
-          munich --> "CapitalCityOf" --> bayern
-          federalStates --> "isFederalState" --> bayern
-
-          withSearch[SearchWithin](bayern.getGeometry) {
-            implicit s =>
-              executeSearch
-            getResults.size must beEqualTo(2)
-            for (r <- getResults; c <- r.toCC[City]) {
-              var oo = Neo4jWrapper.deSerialize[City](r)
-              oo must beEqualTo(c)
-              println("oo: " + oo + " c: " + c)
-            }
+              // adding Point and Case Class
+              val munich = add newPoint ((15.3, 56.2)) using City("Munich")
+              munich("Additional Property") = "something"
 
 
+              // adding new Polygon
+              val lineRing = LinRing((15.0, 56.0) ::(16.0, 56.0) ::(15.0, 57.0) ::(16.0, 57.0) ::(15.0, 56.0) :: Nil)
+              val bayern = add newPolygon (lineRing) using FederalState("Bayern")
+
+              cities --> "isCity" --> munich
+              munich --> "CapitalCityOf" --> bayern
+              federalStates --> "isFederalState" --> bayern
+
+              val list = search(Within(bayern.getGeometry)) match {
+                case Right(x) => x.toSDRList
+              }
+
+              list.size must beEqualTo(2)
+
+              for (r <- list; c <- r.toCC[City]) {
+                var oo = Neo4jWrapper.deSerialize[City](r)
+                oo must beEqualTo(c)
+                println("oo: " + oo + " c: " + c)
+              }
+
+              search(Within(toGeometry(new Envelope(15.0, 16.0, 56.0, 57.0)))) match {
+                case Right(x) => x.toSDRList.size must beEqualTo(3)
+              }
           }
-
-          withSearch[SearchWithin](toGeometry(new Envelope(15.0, 16.0, 56.0, 57.0))) {
-            implicit s =>
-              executeSearch
-            getResults.size must beEqualTo(3)
-          }
-
-          var result = for (r <- search[SearchWithin](toGeometry(new Envelope(15.0, 16.0, 56.0, 57.0)))) yield r
-          result.size must beEqualTo(3)
-        }
       }
       success
     }
