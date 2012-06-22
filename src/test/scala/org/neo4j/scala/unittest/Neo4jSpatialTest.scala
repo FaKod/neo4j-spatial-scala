@@ -1,14 +1,13 @@
 package org.neo4j.scala.unittest
 
-
 import com.vividsolutions.jts.geom.Envelope
 import org.specs2.mutable.SpecificationWithJUnit
 import org.neo4j.scala.util.LinRing
 import java.util.Date
-import org.neo4j.scala._
+import org.neo4j.scala.{Neo4jWrapper, SimpleSpatialDatabaseServiceProvider, EmbeddedGraphDatabaseServiceProvider, Neo4jSpatialWrapper}
 import org.neo4j.graphdb.{Node, Direction}
 import org.neo4j.collections.rtree.NullListener
-
+import org.neo4j.gis.spatial.SpatialDatabaseRecord
 
 case class Cities(creationDate: String = new Date().toString)
 
@@ -22,7 +21,10 @@ class Neo4jSpatialSpec extends SpecificationWithJUnit with Neo4jSpatialWrapper w
 
   def neo4jStoreDir = "/tmp/temp-neo-spatial-test"
 
-  import GeoPiplineImplicits._
+  private def count(i: Iterator[SpatialDatabaseRecord]) = {
+    val r = for (t <- i) yield t
+    r.size
+  }
 
   "NeoSpatialWrapper" should {
 
@@ -60,15 +62,16 @@ class Neo4jSpatialSpec extends SpecificationWithJUnit with Neo4jSpatialWrapper w
             implicit layer =>
               val newNode: Node = add newPoint ((0.0, 0.0)) using City("München")
 
-              search(Within(toGeometry(new Envelope(15.0, 16.0, 56.0, 57.0)))) match {
-                case Right(x) => x.toSDRList.size must beEqualTo (0)
-              }
+              count(search(Within(toGeometry(new Envelope(15.0, 16.0, 56.0, 57.0))))) must beEqualTo(0)
 
               update(newNode) withPoint ((15.3, 56.2))
 
-              search(Within(toGeometry(new Envelope(15.0, 16.0, 56.0, 57.0)))) match {
-                case Right(x) => x.toSDRList.size must beEqualTo(1)
-              }
+              count(search(Within(toGeometry(new Envelope(15.0, 16.0, 56.0, 57.0))))) must beEqualTo(1)
+
+              val r = search(Within(toGeometry(new Envelope(15.0, 16.0, 56.0, 57.0)))) +
+                search(Within(toGeometry(new Envelope(15.1, 16.1, 56.1, 57.1))))
+
+              count(r) must beEqualTo(1)
           }
       }
       success
@@ -109,21 +112,17 @@ class Neo4jSpatialSpec extends SpecificationWithJUnit with Neo4jSpatialWrapper w
               munich --> "CapitalCityOf" --> bayern
               federalStates --> "isFederalState" --> bayern
 
-              val list = search(Within(bayern.getGeometry)) match {
-                case Right(x) => x.toSDRList
-              }
+              val r = search(Within(bayern.getGeometry))
 
-              list.size must beEqualTo(2)
+              r.size must beEqualTo(2)
 
-              for (r <- list; c <- r.toCC[City]) {
+              for (r <- r; c <- r.toCC[City]) {
                 var oo = Neo4jWrapper.deSerialize[City](r)
                 oo must beEqualTo(c)
                 println("oo: " + oo + " c: " + c)
               }
 
-              search(Within(toGeometry(new Envelope(15.0, 16.0, 56.0, 57.0)))) match {
-                case Right(x) => x.toSDRList.size must beEqualTo(3)
-              }
+              count(search(Within(toGeometry(new Envelope(15.0, 16.0, 56.0, 57.0))))) must beEqualTo(3)
           }
       }
       success
