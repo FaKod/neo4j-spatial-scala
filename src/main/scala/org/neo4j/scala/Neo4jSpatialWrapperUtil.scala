@@ -15,6 +15,20 @@ import org.neo4j.collections.rtree.Listener
  */
 trait Neo4jSpatialWrapperUtil {
 
+  object Search {
+    def within(geometry: Geometry)(implicit layer: EditableLayer) =
+      new GeoPipelineIterator(GeoPipeline.startWithinSearch(layer, geometry))
+
+    def withinDistance(geometry: Geometry, distance: Double)(implicit layer: EditableLayer) =
+      new GeoPipelineIterator(GeoPipeline.startNearestNeighborSearch(layer, geometry.getCoordinate, distance))
+
+    def coveredBy(geometry: Geometry)(implicit layer: EditableLayer) =
+      new GeoPipelineIterator(GeoPipeline.startCoveredBySearch(layer, geometry))
+
+    def intersect(geometry: Geometry)(implicit layer: EditableLayer) =
+      new GeoPipelineIterator(GeoPipeline.startIntersectSearch(layer, geometry))
+  }
+
   /**
    * Abstract trait for the different search classes
    */
@@ -22,27 +36,26 @@ trait Neo4jSpatialWrapperUtil {
     val geometry: Geometry
   }
 
-  /*
-  * case classes for the different searchtypes
-  */
-  case class Within(geometry: Geometry) extends Search
-
-  case class WithinDistance(geometry: Geometry, distance: Double) extends Search
-
-  case class CoveredBy(geometry: Geometry) extends Search
-
-  case class Intersect(geometry: Geometry) extends Search
-
   /**
    * Maps GeoPipeline to Scala Iterator[SpatialDatabaseRecord]
    * @todo Can the iteration be a list of SpatialDatabaseRecords?
    *
    * @param gp GeoPipeline
    */
-  class GeoPipelineIterator(gp: GeoPipeline) extends Iterator[SpatialDatabaseRecord] {
+  class GeoPipelineIterator(private val gp: GeoPipeline) extends Iterator[SpatialDatabaseRecord] {
     def hasNext = gp.hasNext
 
     def next() = gp.next().getRecord
+
+    /**
+     * allows to append search method calls
+     * @param that other GeoPipelineIterator
+     * @return GeoPipelineIterator this
+     */
+    def +(that: GeoPipelineIterator) = {
+      gp.addPipe(that.gp)
+      this
+    }
   }
 
   /**
@@ -59,23 +72,6 @@ trait Neo4jSpatialWrapperUtil {
     def +(that: GeoPipeline) = {
       gp.addPipe(that)
       gp
-    }
-  }
-
-  /**
-   * central search methods. Creates new pipeline with the given type of search
-   * @param search A the search object
-   * @param layer the layer to search
-   * @tparam A type of search object
-   * @return GeoPipeline
-   */
-  def search[A <: Search](search: A)(implicit layer: EditableLayer): GeoPipeline = {
-    search match {
-      case s: Within => GeoPipeline.startWithinSearch(layer, s.geometry)
-      case s: WithinDistance => GeoPipeline.startNearestNeighborSearch(layer, s.geometry.getCoordinate, s.distance)
-      case s: CoveredBy => GeoPipeline.startCoveredBySearch(layer, s.geometry)
-      case s: Intersect => GeoPipeline.startIntersectSearch(layer, s.geometry)
-      case _ => throw new IllegalArgumentException("unsupported search type")
     }
   }
 
@@ -150,7 +146,8 @@ trait Neo4jSpatialWrapperUtil {
 
   def getGeometryFactory(implicit layer: EditableLayer) = layer.getGeometryFactory
 
-  def toGeometry(envelope: Envelope)(implicit layer: EditableLayer): Geometry = getGeometryFactory.toGeometry(envelope)
+  implicit def toGeometry(envelope: Envelope)(implicit layer: EditableLayer): Geometry =
+    getGeometryFactory.toGeometry(envelope)
 
   //def executeSearch(search: Search)(implicit layer: EditableLayer): Unit = layer.getIndex.executeSearch(search)
 

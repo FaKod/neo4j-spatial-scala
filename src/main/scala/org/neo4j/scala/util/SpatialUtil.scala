@@ -41,7 +41,7 @@ private[scala] class AddGeometry(layer: EditableLayer) {
   def newMultiLineString(lineStrings: Array[LineString]) = layer.add(gf.createMultiLineString(lineStrings))
 }
 
-private[scala] class UpdateGeometry(node: Node,  layer: EditableLayer) {
+private[scala] class UpdateGeometry(node: Node, layer: EditableLayer) {
   private val gf = layer.getGeometryFactory
 
   /**
@@ -115,4 +115,21 @@ object lineString {
 
   def apply(b: Buffer[(Double, Double)])(implicit layer: EditableLayer) =
     new LineString(CoordArraySequence(b), layer.getGeometryFactory)
+}
+
+/**
+ * factory for Envelope
+ */
+object Envelope {
+  def apply(x1: Double, x2: Double, y1: Double, y2: Double) =
+    new Envelope(x1, x2, y1, y2)
+
+  def apply(coordinate: com.vividsolutions.jts.geom.Coordinate, coordinate1: com.vividsolutions.jts.geom.Coordinate) =
+    new Envelope(coordinate, coordinate1)
+
+  def apply(p: com.vividsolutions.jts.geom.Coordinate) =
+    new Envelope(p)
+
+  def apply(env: com.vividsolutions.jts.geom.Envelope) =
+    new Envelope(env)
 }
