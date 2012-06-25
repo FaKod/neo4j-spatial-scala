@@ -1,8 +1,7 @@
 package org.neo4j.scala.unittest
 
-import com.vividsolutions.jts.geom.Envelope
 import org.specs2.mutable.SpecificationWithJUnit
-import org.neo4j.scala.util.LinRing
+import org.neo4j.scala.util.{Envelope, LinRing}
 import java.util.Date
 import org.neo4j.scala.{Neo4jWrapper, SimpleSpatialDatabaseServiceProvider, EmbeddedGraphDatabaseServiceProvider, Neo4jSpatialWrapper}
 import org.neo4j.graphdb.{Node, Direction}
@@ -21,7 +20,7 @@ class Neo4jSpatialSpec extends SpecificationWithJUnit with Neo4jSpatialWrapper w
 
   def neo4jStoreDir = "/tmp/temp-neo-spatial-test"
 
-  private def count(i: Iterator[SpatialDatabaseRecord]) = {
+  private def count(i: GeoPipelineIterator) = {
     val r = for (t <- i) yield t
     r.size
   }
@@ -62,14 +61,14 @@ class Neo4jSpatialSpec extends SpecificationWithJUnit with Neo4jSpatialWrapper w
             implicit layer =>
               val newNode: Node = add newPoint ((0.0, 0.0)) using City("München")
 
-              count(search(Within(toGeometry(new Envelope(15.0, 16.0, 56.0, 57.0))))) must beEqualTo(0)
+              count(Search within Envelope(15.0, 16.0, 56.0, 57.0)) must beEqualTo(0)
 
               update(newNode) withPoint ((15.3, 56.2))
 
-              count(search(Within(toGeometry(new Envelope(15.0, 16.0, 56.0, 57.0))))) must beEqualTo(1)
+              count(Search within Envelope(15.0, 16.0, 56.0, 57.0)) must beEqualTo(1)
 
-              val r = search(Within(toGeometry(new Envelope(15.0, 16.0, 56.0, 57.0)))) +
-                search(Within(toGeometry(new Envelope(15.1, 16.1, 56.1, 57.1))))
+              val r = (Search within Envelope(15.0, 16.0, 56.0, 57.0)) +
+                (Search within Envelope(15.1, 16.1, 56.1, 57.1))
 
               count(r) must beEqualTo(1)
           }
@@ -112,7 +111,7 @@ class Neo4jSpatialSpec extends SpecificationWithJUnit with Neo4jSpatialWrapper w
               munich --> "CapitalCityOf" --> bayern
               federalStates --> "isFederalState" --> bayern
 
-              val r = search(Within(bayern.getGeometry))
+              val r = Search within(bayern.getGeometry)
 
               r.size must beEqualTo(2)
 
@@ -122,7 +121,7 @@ class Neo4jSpatialSpec extends SpecificationWithJUnit with Neo4jSpatialWrapper w
                 println("oo: " + oo + " c: " + c)
               }
 
-              count(search(Within(toGeometry(new Envelope(15.0, 16.0, 56.0, 57.0))))) must beEqualTo(3)
+              count(Search within Envelope(15.0, 16.0, 56.0, 57.0)) must beEqualTo(3)
           }
       }
       success
