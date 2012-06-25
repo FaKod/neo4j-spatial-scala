@@ -94,7 +94,7 @@ munich --> "CapitalCityOf" --> bayern
 	
 Searching Things
 ----------------
-Spatial searches start with <code>Search<code> and the type of search, like:
+Spatial searches start with <code>Search</code> and the type of search, like:
 
 * within
 * withinDistance
@@ -105,8 +105,9 @@ Spatial searches start with <code>Search<code> and the type of search, like:
 For instance:
 
 ```scala
-val r = Search within Envelope(15.0, 16.0, 56.0, 57.0)
-for (r <- r; c <- r.toCC[City]) yield c
+// search all cities within envelope
+val sw = Search within Envelope(15.0, 16.0, 56.0, 57.0)
+for (r <- sw; city <- r.toCC[City]) yield city
 ```
 
 
