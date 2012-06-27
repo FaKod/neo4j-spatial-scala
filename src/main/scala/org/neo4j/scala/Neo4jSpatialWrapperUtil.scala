@@ -3,10 +3,10 @@ package org.neo4j.scala
 
 import org.neo4j.gis.spatial._
 import com.vividsolutions.jts.geom._
-import pipes.GeoPipeline
 import org.neo4j.graphdb.{Node, GraphDatabaseService}
 import util.{UpdateGeometry, AddGeometry, Coord}
 import org.neo4j.collections.rtree.Listener
+import org.neo4j.gis.spatial.pipes.GeoPipeline
 
 
 /**
@@ -27,13 +27,6 @@ trait Neo4jSpatialWrapperUtil {
 
     def intersect(geometry: Geometry)(implicit layer: EditableLayer) =
       new GeoPipelineIterator(GeoPipeline.startIntersectSearch(layer, geometry))
-  }
-
-  /**
-   * Abstract trait for the different search classes
-   */
-  abstract trait Search {
-    val geometry: Geometry
   }
 
   /**
