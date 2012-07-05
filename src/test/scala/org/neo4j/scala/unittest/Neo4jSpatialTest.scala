@@ -6,7 +6,10 @@ import java.util.Date
 import org.neo4j.scala.{Neo4jWrapper, SimpleSpatialDatabaseServiceProvider, EmbeddedGraphDatabaseServiceProvider, Neo4jSpatialWrapper}
 import org.neo4j.graphdb.{Node, Direction}
 import org.neo4j.collections.rtree.NullListener
-import org.neo4j.gis.spatial.SpatialDatabaseRecord
+import org.neo4j.gis.spatial.pipes.GeoPipeline
+import com.vividsolutions.jts.geom._
+import org.neo4j.scala.pipes.filtering.{FilterCoveredBy, FilterWithin}
+
 
 case class Cities(creationDate: String = new Date().toString)
 
@@ -126,5 +129,46 @@ class Neo4jSpatialSpec extends SpecificationWithJUnit with Neo4jSpatialWrapper w
       }
       success
     }
+
+    "test geoPipline with filter" in {
+
+      withSpatialTx {
+
+        implicit db =>
+
+        // remove existing layer
+          try {
+            deleteLayer("filter", new NullListener)
+          }
+          catch {
+            case _ =>
+          }
+
+          withLayer(getOrCreateEditableLayer("filter")) {
+            implicit layer =>
+
+              val gf = layer.getGeometryFactory
+
+              //adding 2 Points without serialized Case Class
+              val munichTMP = add newPoint ((15.3, 56.2))
+              val munich = add newPoint ((15.6, 56.6))
+
+              //searching the points
+              implicit val pipeline1 = GeoPipeline.startCoveredBySearch(layer, gf.toGeometry(new Envelope(15, 56, 16, 57)))
+              pipeline1.size must_== 2
+
+              //add a Pipe/Filter to the resultset
+              import org.neo4j.scala.pipes.filtering.FilterDSL._
+              val pipeline2 = filter add FilterCoveredBy (gf.toGeometry(new Envelope(15.5, 56.5, 16.5, 57.5)))
+
+              count(new GeoPipelineIterator(pipeline2)) must_== 1
+
+              //only to show GeoPipeline works
+              pipeline2.size() must_== 3
+
+          }
+      }
+    }
+
   }
 }
