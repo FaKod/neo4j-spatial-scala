@@ -161,7 +161,7 @@ class Neo4jSpatialSpec extends SpecificationWithJUnit with Neo4jSpatialWrapper w
               import org.neo4j.scala.pipes.filtering.FilterDSL._
               val pipeline2 = filter add FilterCoveredBy (gf.toGeometry(new Envelope(15.5, 56.5, 16.5, 57.5)))
 
-              count(new GeoPipelineIterator(pipeline2)) must_== 1
+              count(pipeline2) must_== 1
 
               //only to show GeoPipeline works
               pipeline2.size() must_== 3

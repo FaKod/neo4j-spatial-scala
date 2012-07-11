@@ -6,7 +6,7 @@ import com.vividsolutions.jts.geom._
 import org.neo4j.graphdb.{Node, GraphDatabaseService}
 import util.{UpdateGeometry, AddGeometry, Coord}
 import org.neo4j.collections.rtree.Listener
-import org.neo4j.gis.spatial.pipes.GeoPipeline
+import org.neo4j.gis.spatial.pipes.{GeoPipeline}
 
 
 /**
@@ -55,6 +55,8 @@ trait Neo4jSpatialWrapperUtil {
    * creates a Scala Iterator from GeoPipeline
    */
   implicit def geoPipelineToIterator(gp: GeoPipeline): Iterator[SpatialDatabaseRecord] = new GeoPipelineIterator(gp)
+
+  implicit def geoPipelineToGeoPipelineIterator(gp: GeoPipeline): GeoPipelineIterator = new GeoPipelineIterator(gp)
 
   /**
    * allows to append search method calls
